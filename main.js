@@ -125,48 +125,65 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Create info button
+// Replace the existing info button creation with this
 const infoGeometry = new THREE.CircleGeometry(0.3, 32);
 const infoMaterial = new THREE.MeshBasicMaterial({ 
     color: 0xffffff,
     transparent: true,
-    opacity: 0.8 
+    opacity: 0.15 
 });
 const infoButton = new THREE.Mesh(infoGeometry, infoMaterial);
 infoButton.position.set(0, 4, 0);
 scene.add(infoButton);
 
-// Add "i" text to the button
-const canvas = document.createElement('canvas');
-canvas.width = 64;
-canvas.height = 64;
-const context = canvas.getContext('2d');
-context.fillStyle = '#000000';
-context.font = 'bold 40px Arial';
-context.textAlign = 'center';
-context.textBaseline = 'middle';
-context.fillText('i', 32, 32);
-
-const textTexture = new THREE.CanvasTexture(canvas);
-const textMaterial = new THREE.MeshBasicMaterial({
-    map: textTexture,
-    transparent: true
+// Create plus sign using two lines
+const lineGeometry1 = new THREE.PlaneGeometry(0.2, 0.02);
+const lineGeometry2 = new THREE.PlaneGeometry(0.02, 0.2);
+const lineMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.9
 });
-const textGeometry = new THREE.PlaneGeometry(0.3, 0.3);
-const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-textMesh.position.copy(infoButton.position);
-textMesh.position.z += 0.01;
-scene.add(textMesh);
+const line1 = new THREE.Mesh(lineGeometry1, lineMaterial);
+const line2 = new THREE.Mesh(lineGeometry2, lineMaterial);
+line1.position.copy(infoButton.position);
+line2.position.copy(infoButton.position);
+line1.position.z = 0.01;
+line2.position.z = 0.01;
+scene.add(line1);
+scene.add(line2);
 
 // Raycaster setup
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Text content for different points
+// Text content with updated structure
 const textContents = [
-    "Discover VOLO Marshmallow Milk, a highly sought-after Californian strain meticulously phenotype-hunted by the legendary Capulator.",
-    "Marshmallow Milk exudes strong terpenes with a hint reminiscent of the beloved Lucky Cereal Marshmallow Milk. Proudly Ontario-grown, VOLO combines artisanal cultivation methods with cutting-edge genetics to create consistent, high-quality cannabis",
-    "THC 26 - 32%"
+    { 
+        title: "MARSHMALLOW MILK", 
+        text: "Phenotype-hunted by Capulator",
+        highlight: "VOLO EXCLUSIVE"
+    },
+    { 
+        title: "CULTIVATION", 
+        text: "February 2025",
+        highlight: "ONTARIO GROWN"
+    },
+    { 
+        title: "EFFECTS", 
+        text: "Euphoric • Creative • Relaxing",
+        highlight: "HYBRID"
+    },
+    { 
+        title: "POTENCY", 
+        text: "THC: 26-32%",
+        highlight: "HIGH"
+    },
+    { 
+        title: "TERPENES", 
+        text: "Lucky Cereal • Sweet • Creamy",
+        highlight: "RARE"
+    }
 ];
 
 // Store lines and text boxes
@@ -183,16 +200,11 @@ function onMouseClick(event) {
 
     if (intersects.length > 0) {
         clearPreviousAnimations();
-        startDrawingMultipleLines();
+        showAllTextBoxes();
     }
 }
 
 function clearPreviousAnimations() {
-    // Remove existing lines
-    activeLines.forEach(line => scene.remove(line));
-    activeLines = [];
-    
-    // Remove existing text boxes
     activeTextBoxes.forEach(box => {
         if (box && box.parentNode) {
             box.parentNode.removeChild(box);
@@ -201,150 +213,58 @@ function clearPreviousAnimations() {
     activeTextBoxes = [];
 }
 
-function startDrawingMultipleLines() {
-    const startPoint = new THREE.Vector3(0, 4, 0);
-    const directions = [
-        { angle: 0, length: 2 },    // Right
-        { angle: 120, length: 2 },  // Left-up
-        { angle: 240, length: 2 }   // Left-down
-    ];
-
-    directions.forEach((direction, index) => {
-        drawAnimatedLine(startPoint, direction.angle, direction.length, index);
-    });
-}
-
-function drawAnimatedLine(startPoint, angle, length, textIndex) {
-    const points = [startPoint.clone()];
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    scene.add(line);
-    activeLines.push(line);
-
-    const radians = THREE.MathUtils.degToRad(angle);
-    let progress = 0;
-    const animationDuration = 1; // seconds
-    const finalX = startPoint.x + Math.cos(radians) * length;
-    const finalY = startPoint.y + Math.sin(radians) * length;
-
-    function animateLine() {
-        progress += 0.016; // approximately 60fps
-        
-        if (progress < animationDuration) {
-            const t = progress / animationDuration;
-            const currentX = startPoint.x + (finalX - startPoint.x) * t;
-            const currentY = startPoint.y + (finalY - startPoint.y) * t;
-            points.push(new THREE.Vector3(currentX, currentY, 0));
-            lineGeometry.setFromPoints(points);
-            requestAnimationFrame(animateLine);
-        } else {
-            // Show text box when line animation completes
-            showTextBox(textContents[textIndex], angle, finalX, finalY);
-        }
+function showAllTextBoxes() {
+    // Remove any existing containers first
+    const existingContainer = document.querySelector('.info-container');
+    if (existingContainer) {
+        existingContainer.remove();
     }
 
-    animateLine();
-}
+    const container = document.createElement('div');
+    container.className = 'info-container';
+    document.body.appendChild(container);
+    activeTextBoxes.push(container);
 
-function showTextBox(text, angle, x, y) {
-    const textBox = document.createElement('div');
-    textBox.className = 'info-text-box';
-    textBox.innerHTML = '<span></span>';
-    document.body.appendChild(textBox);
-    activeTextBoxes.push(textBox);
-
-    // Position the text box based on the line end point
-    const vector = new THREE.Vector3(x, y, 0);
-    vector.project(camera);
-    
-    const widthHalf = window.innerWidth / 2;
-    const heightHalf = window.innerHeight / 2;
-    
-    const screenX = (vector.x * widthHalf) + widthHalf;
-    const screenY = -(vector.y * heightHalf) + heightHalf;
-
-    // Add styles
-    if (!document.getElementById('info-styles')) {
-        const styles = `
-            .info-text-box {
-                position: fixed;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 15px;
-                font-size: 16px;
-                font-family: Arial, sans-serif;
-                border-radius: 8px;
-                border: 1px solid white;
-                max-width: 300px;
-                text-align: left;
-                pointer-events: none;
-                opacity: 0;
-                animation: fadeIn 0.5s forwards;
-            }
-            @keyframes fadeIn {
-                to { opacity: 1; }
-            }
+    // Create and animate each text box
+    textContents.forEach((content, index) => {
+        const textBox = document.createElement('div');
+        textBox.className = 'info-text-box';
+        textBox.style.setProperty('--index', index);
+        textBox.innerHTML = `
+            <div class="highlight">${content.highlight}</div>
+            <div class="title">${content.title}</div>
+            <div class="text"><span></span></div>
         `;
-        const styleSheet = document.createElement("style");
-        styleSheet.id = 'info-styles';
-        styleSheet.type = "text/css";
-        styleSheet.innerText = styles;
-        document.head.appendChild(styleSheet);
-    }
+        container.appendChild(textBox);
 
-    textBox.style.left = `${screenX}px`;
-    textBox.style.top = `${screenY}px`;
-    textBox.style.transform = 'translate(-50%, -50%)';
-
-    // Typing effect
-    let i = 0;
-    function type() {
-        if (i < text.length) {
-            textBox.querySelector("span").innerHTML += text.charAt(i);
-            i++;
-            setTimeout(type, 30);
-        }
-    }
-    type();
+        // Typing effect with delay
+        setTimeout(() => {
+            let i = 0;
+            function type() {
+                if (i < content.text.length) {
+                    textBox.querySelector(".text span").innerHTML += content.text.charAt(i);
+                    i++;
+                    setTimeout(type, 25);
+                }
+            }
+            type();
+        }, index * 200);
+    });
 }
 
 // Add click event listener
 window.addEventListener('click', onMouseClick);
 
-// Update text positions in animation loop
-function updateTextPositions() {
-    activeTextBoxes.forEach((textBox, index) => {
-        if (textBox && textBox.parentNode) {
-            const line = activeLines[index];
-            if (line) {
-                const lastPoint = line.geometry.attributes.position.array;
-                const length = lastPoint.length;
-                const vector = new THREE.Vector3(
-                    lastPoint[length - 3],
-                    lastPoint[length - 2],
-                    lastPoint[length - 1]
-                );
-                vector.project(camera);
-                
-                const widthHalf = window.innerWidth / 2;
-                const heightHalf = window.innerHeight / 2;
-                
-                const screenX = (vector.x * widthHalf) + widthHalf;
-                const screenY = -(vector.y * heightHalf) + heightHalf;
-                
-                textBox.style.left = `${screenX}px`;
-                textBox.style.top = `${screenY}px`;
-            }
-        }
-    });
-}
-
 // Modify the animate function to update text positions
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    updateTextPositions();
+
+    // Make button and text face the camera
+    infoButton.quaternion.copy(camera.quaternion);
+    line1.quaternion.copy(camera.quaternion);
+    line2.quaternion.copy(camera.quaternion);
+
     renderer.render(scene, camera);
 }
 
