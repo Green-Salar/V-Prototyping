@@ -123,10 +123,23 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Update button position if needed based on screen size
+    if (window.innerWidth <= 768) {
+        // Adjust position for mobile if needed
+        infoButton.position.set(0, 3.5, 0);
+        textMesh.position.copy(infoButton.position);
+        textMesh.position.z += 0.01;
+    } else {
+        // Desktop position
+        infoButton.position.set(0, 4, 0);
+        textMesh.position.copy(infoButton.position);
+        textMesh.position.z += 0.01;
+    }
 });
 
 // Replace the existing info button creation with this
-const infoGeometry = new THREE.CircleGeometry(0.3, 32);
+const infoGeometry = new THREE.CircleGeometry(0.4, 32);
 const infoMaterial = new THREE.MeshBasicMaterial({ 
     color: 0xffffff,
     transparent: true,
@@ -134,6 +147,7 @@ const infoMaterial = new THREE.MeshBasicMaterial({
 });
 const infoButton = new THREE.Mesh(infoGeometry, infoMaterial);
 infoButton.position.set(0, 4, 0);
+infoButton.renderOrder = 999; // Ensure it renders on top
 scene.add(infoButton);
 
 // Create plus sign using two lines
