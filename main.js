@@ -205,9 +205,13 @@ let activeLines = [];
 let activeTextBoxes = [];
 
 // Handle click events
-function onMouseClick(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+function onPointerClick(event) {
+    // Get coordinates from either mouse or touch event
+    const x = event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+    const y = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+    
+    mouse.x = (x / window.innerWidth) * 2 - 1;
+    mouse.y = -(y / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(infoButton);
@@ -266,8 +270,9 @@ function showAllTextBoxes() {
     });
 }
 
-// Add click event listener
-window.addEventListener('click', onMouseClick);
+// Add both click and touch event listeners
+window.addEventListener('click', onPointerClick);
+window.addEventListener('touchstart', onPointerClick);
 
 // Modify the animate function to update text positions
 function animate() {
