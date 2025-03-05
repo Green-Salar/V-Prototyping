@@ -112,6 +112,48 @@ loader.load('gol.gltf', (gltf) => {
 
     scene.add(mesh);
     document.getElementById('progress-container').style.display = 'none';
+
+    // Camera and model animation on load
+    const startPosition = camera.position.clone();
+    const startTarget = controls.target.clone();
+    const startRotation = mesh.rotation.z;
+    const startTime = Date.now();
+    
+    function animateCamera() {
+        const elapsed = Date.now() - startTime;
+        const duration = 2000; // 2 seconds animation
+        
+        if (elapsed < duration) {
+            const progress = elapsed / duration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
+            
+            // Zoom in slightly
+            camera.position.lerpVectors(
+                startPosition,
+                new THREE.Vector3(3, 4, 8),
+                easeProgress
+            );
+            
+            // Rotate slightly
+            controls.target.lerpVectors(
+                startTarget,
+                new THREE.Vector3(0, 1.5, 0),
+                easeProgress
+            );
+
+            // Rotate the model slightly around Z-axis
+            mesh.rotation.z = THREE.MathUtils.lerp(
+                startRotation,
+                startRotation + THREE.MathUtils.degToRad(-30), // 15 degrees rotation
+                easeProgress
+            );
+            
+            controls.update();
+            requestAnimationFrame(animateCamera);
+        }
+    }
+    
+    animateCamera();
 }, (xhr) => {
     console.log(`loading ${xhr.loaded / xhr.total * 100}%`);
 }, (error) => {
